@@ -10,8 +10,24 @@ public class CodeGenerationStep(IAiService aiService, ILogger<CodeGenerationStep
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
+        var reasoning = "Generate a first working version using all known context.";
         var plan = context.StepOutputs.TryGetValue("PlanStep", out var planned) ? planned : "No prior plan available.";
-        var prompt = $"Using this plan:\n{plan}\n\nGenerate improved code and explain key changes for this request:\n{context.UserPrompt}";
+        var retryHint = context.SharedContext.TryGetValue("retryHint", out var hint) ? hint : string.Empty;
+        var prompt = $"""
+                     Use the following plan and history to generate or revise code.
+                     
+                     Plan:
+                     {plan}
+                     
+                     Previous execution history:
+                     {context.BuildHistorySummary()}
+                     
+                     Additional retry hint:
+                     {retryHint}
+                     
+                     Request:
+                     {context.UserPrompt}
+                     """;
 
         try
         {
@@ -21,8 +37,11 @@ public class CodeGenerationStep(IAiService aiService, ILogger<CodeGenerationStep
             return new StepResult
             {
                 StepName = Name,
+                Status = "Completed",
                 Input = plan,
                 Output = output,
+                Reasoning = reasoning,
+                Decision = "Next: ExplainCodeStep",
                 Success = true,
                 RetryCount = retryCount,
                 PromptUsed = prompt,
@@ -36,8 +55,11 @@ public class CodeGenerationStep(IAiService aiService, ILogger<CodeGenerationStep
             return new StepResult
             {
                 StepName = Name,
+                Status = "Failed",
                 Input = plan,
                 Output = string.Empty,
+                Reasoning = reasoning,
+                Decision = "Retry generation with a narrower prompt",
                 Success = false,
                 Error = ex.Message,
                 RetryCount = retryCount,

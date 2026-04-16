@@ -22,6 +22,9 @@ builder.Services.AddScoped<IAgentExecutionEngine, AgentExecutionEngine>();
 builder.Services.AddScoped<IAgentStep, PlanStep>();
 builder.Services.AddScoped<IAgentStep, CodeGenerationStep>();
 builder.Services.AddScoped<IAgentStep, ValidationStep>();
+builder.Services.AddScoped<IAgentStep, ExplainCodeStep>();
+builder.Services.AddScoped<IAgentStep, FixIssuesStep>();
+builder.Services.AddScoped<IAgentStep, ImproveStructureStep>();
 
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>

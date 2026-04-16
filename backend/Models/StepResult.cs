@@ -3,8 +3,11 @@ namespace TraceAI.Api.Models;
 public class StepResult
 {
     public string StepName { get; set; } = string.Empty;
+    public string Status { get; set; } = "Completed";
     public string Input { get; set; } = string.Empty;
     public string Output { get; set; } = string.Empty;
+    public string Reasoning { get; set; } = string.Empty;
+    public string Decision { get; set; } = string.Empty;
     public bool Success { get; set; }
     public string Error { get; set; } = string.Empty;
     public int RetryCount { get; set; }

@@ -3,36 +3,41 @@ using TraceAI.Api.Services;
 
 namespace TraceAI.Api.Steps;
 
-public class PlanStep(IAiService aiService, ILogger<PlanStep> logger) : IAgentStep
+public class FixIssuesStep(IAiService aiService, ILogger<FixIssuesStep> logger) : IAgentStep
 {
-    public string Name => "PlanStep";
-    public int Order => 1;
+    public string Name => "FixIssuesStep";
+    public int Order => 5;
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
-        var reasoning = "I need an actionable plan before code work starts.";
+        var reasoning = "Validation or generation found issues; attempt targeted fixes using prior outputs.";
+        var currentCode = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";
+        var validation = context.StepOutputs.TryGetValue("ValidationStep", out var validationText) ? validationText : "No validation feedback available.";
         var prompt = $"""
-                     Create a concise plan for this request.
-                     Use 4-6 numbered steps.
-                     Focus on generation, explanation, fixing issues, improvements, and testing.
+                     Fix the implementation using the validation findings.
+                     Keep good parts, patch weak parts, and return revised code + concise change log.
 
-                     User request:
-                     {context.UserPrompt}
+                     Current implementation:
+                     {currentCode}
+
+                     Validation findings:
+                     {validation}
                      """;
+
         try
         {
             var (output, raw) = await aiService.CompleteAsync(prompt, context.Model, cancellationToken);
+            context.StepOutputs["CodeGenerationStep"] = output;
             context.StepOutputs[Name] = output;
-            context.SharedContext["currentPlan"] = output;
 
             return new StepResult
             {
                 StepName = Name,
                 Status = "Completed",
-                Input = context.UserPrompt,
+                Input = validation,
                 Output = output,
                 Reasoning = reasoning,
-                Decision = "Next: CodeGenerationStep",
+                Decision = "Next: ValidationStep",
                 Success = true,
                 RetryCount = retryCount,
                 PromptUsed = prompt,
@@ -47,10 +52,10 @@ public class PlanStep(IAiService aiService, ILogger<PlanStep> logger) : IAgentSt
             {
                 StepName = Name,
                 Status = "Failed",
-                Input = context.UserPrompt,
+                Input = validation,
                 Output = string.Empty,
                 Reasoning = reasoning,
-                Decision = "Fallback to direct generation if planning keeps failing",
+                Decision = "Retry fix with stricter patch-only prompt",
                 Success = false,
                 Error = ex.Message,
                 RetryCount = retryCount,
