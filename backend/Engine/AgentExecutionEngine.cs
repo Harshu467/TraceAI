@@ -12,15 +12,10 @@ public class AgentExecutionEngine(
     IEnumerable<IAgentStep> steps,
     TraceAiDbContext dbContext,
     IStepLogService logService,
-    IHubContext<ExecutionHub> hubContext) : IAgentExecutionEngine
+    IHubContext<ExecutionHub> hubContext,
+    ILogger<AgentExecutionEngine> logger) : IAgentExecutionEngine
 {
-    private readonly List<IAgentStep> _orderedSteps = steps.OrderBy(s => s.Name switch
-    {
-        "PlanStep" => 1,
-        "CodeGenerationStep" => 2,
-        "ValidationStep" => 3,
-        _ => 99
-    }).ToList();
+    private readonly List<IAgentStep> _orderedSteps = steps.OrderBy(s => s.Order).ToList();
 
     public async Task<ExecuteTaskResponse> ExecuteTaskAsync(ExecuteTaskRequest request, CancellationToken cancellationToken)
     {
@@ -45,14 +40,16 @@ public class AgentExecutionEngine(
 
         foreach (var step in _orderedSteps)
         {
-            var result = await step.ExecuteAsync(context, retryCount: 0, cancellationToken);
+            logger.LogInformation("Executing step {StepName} for task {TaskRunId}.", step.Name, task.Id);
+
+            var result = await ExecuteStepSafelyAsync(step, context, retryCount: 0, cancellationToken);
             results.Add(result);
             await logService.PersistStepResultAsync(task.Id, result, cancellationToken);
-
             await hubContext.Clients.Group(task.Id.ToString()).SendAsync("stepUpdated", result, cancellationToken);
 
             if (!result.Success)
             {
+                logger.LogWarning("Execution stopped at step {StepName} for task {TaskRunId}. Error: {Error}", step.Name, task.Id, result.Error);
                 task.Status = "Failed";
                 await dbContext.SaveChangesAsync(cancellationToken);
                 return new ExecuteTaskResponse { TaskRunId = task.Id, Steps = results };
@@ -90,10 +87,49 @@ public class AgentExecutionEngine(
         }
 
         var retryCount = existingSteps.Count(s => s.StepName == step.Name);
-        var retryResult = await step.ExecuteAsync(context, retryCount, cancellationToken);
+        logger.LogInformation("Retrying step {StepName} for task {TaskRunId}. Retry count: {RetryCount}.", step.Name, taskRunId, retryCount);
+        var retryResult = await ExecuteStepSafelyAsync(step, context, retryCount, cancellationToken);
         await logService.PersistStepResultAsync(taskRunId, retryResult, cancellationToken);
         await hubContext.Clients.Group(taskRunId.ToString()).SendAsync("stepUpdated", retryResult, cancellationToken);
 
         return retryResult;
+    }
+
+    private async Task<StepResult> ExecuteStepSafelyAsync(
+        IAgentStep step,
+        ExecutionContext context,
+        int retryCount,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await step.ExecuteAsync(context, retryCount, cancellationToken);
+            return NormalizeResult(result, step.Name, retryCount);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled exception while executing step {StepName}.", step.Name);
+            return NormalizeResult(new StepResult
+            {
+                StepName = step.Name,
+                Input = context.UserPrompt,
+                Output = string.Empty,
+                Success = false,
+                Error = ex.Message,
+                RetryCount = retryCount,
+                TimestampUtc = DateTime.UtcNow
+            }, step.Name, retryCount);
+        }
+    }
+
+    private static StepResult NormalizeResult(StepResult result, string stepName, int retryCount)
+    {
+        result.StepName = string.IsNullOrWhiteSpace(result.StepName) ? stepName : result.StepName;
+        result.Input ??= string.Empty;
+        result.Output ??= string.Empty;
+        result.Error ??= string.Empty;
+        result.RetryCount = retryCount;
+        result.TimestampUtc = result.TimestampUtc == default ? DateTime.UtcNow : result.TimestampUtc;
+        return result;
     }
 }

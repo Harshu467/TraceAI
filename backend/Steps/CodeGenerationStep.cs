@@ -3,9 +3,10 @@ using TraceAI.Api.Services;
 
 namespace TraceAI.Api.Steps;
 
-public class CodeGenerationStep(IAiService aiService) : IAgentStep
+public class CodeGenerationStep(IAiService aiService, ILogger<CodeGenerationStep> logger) : IAgentStep
 {
     public string Name => "CodeGenerationStep";
+    public int Order => 2;
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
@@ -31,6 +32,7 @@ public class CodeGenerationStep(IAiService aiService) : IAgentStep
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "{StepName} failed during execution.", Name);
             return new StepResult
             {
                 StepName = Name,
