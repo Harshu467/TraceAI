@@ -8,7 +8,7 @@ public class FixIssuesStep(IAiService aiService, ILogger<FixIssuesStep> logger) 
     public string Name => "FixIssuesStep";
     public int Order => 5;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "Validation or generation found issues; attempt targeted fixes using prior outputs.";
         var currentCode = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";

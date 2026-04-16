@@ -8,7 +8,7 @@ public class ExplainCodeStep(IAiService aiService, ILogger<ExplainCodeStep> logg
     public string Name => "ExplainCodeStep";
     public int Order => 4;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "Explain generated code so the next fix/improvement decisions are informed.";
         var code = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";

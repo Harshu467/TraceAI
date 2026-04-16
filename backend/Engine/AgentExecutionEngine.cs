@@ -31,7 +31,7 @@ public class AgentExecutionEngine(
         dbContext.Tasks.Add(task);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var context = new ExecutionContext
+        var context = new TraceAI.Api.Models.ExecutionContext
         {
             TaskRunId = task.Id,
             UserPrompt = request.Prompt,
@@ -114,7 +114,7 @@ public class AgentExecutionEngine(
             throw new InvalidOperationException($"Step '{stepName}' not found.");
         }
 
-        var context = new ExecutionContext
+        var context = new TraceAI.Api.Models.ExecutionContext
         {
             TaskRunId = taskRunId,
             UserPrompt = task.Prompt
@@ -184,7 +184,7 @@ public class AgentExecutionEngine(
         };
     }
 
-    private static string? DecideNextStep(string stepName, StepResult result, ExecutionContext context)
+    private static string? DecideNextStep(string stepName, StepResult result, TraceAI.Api.Models.ExecutionContext context)
     {
         if (!result.Success)
         {
@@ -207,7 +207,7 @@ public class AgentExecutionEngine(
 
     private async Task<StepResult> ExecuteStepSafelyAsync(
         IAgentStep step,
-        ExecutionContext context,
+        TraceAI.Api.Models.ExecutionContext context,
         int retryCount,
         CancellationToken cancellationToken)
     {

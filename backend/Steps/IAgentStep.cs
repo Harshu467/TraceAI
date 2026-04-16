@@ -6,5 +6,5 @@ public interface IAgentStep
 {
     string Name { get; }
     int Order { get; }
-    Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken);
+    Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken);
 }
