@@ -10,20 +10,33 @@ public class ValidationStep(IAiService aiService, ILogger<ValidationStep> logger
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
+        var reasoning = "Validate the latest implementation and decide whether to fix or continue improving.";
         var code = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";
-        var prompt = $"Validate the following output for correctness and possible issues. Return PASS/FAIL and reasons.\n\n{code}";
+        var prompt = $"""
+                     Validate this implementation. Return:
+                     1) PASS or FAIL
+                     2) concrete issues
+                     3) recommended next action
+
+                     Implementation:
+                     {code}
+                     """;
 
         try
         {
             var (output, raw) = await aiService.CompleteAsync(prompt, context.Model, cancellationToken);
             context.StepOutputs[Name] = output;
+            var success = !output.Contains("FAIL", StringComparison.OrdinalIgnoreCase);
 
             return new StepResult
             {
                 StepName = Name,
+                Status = "Completed",
                 Input = code,
                 Output = output,
-                Success = !output.Contains("FAIL", StringComparison.OrdinalIgnoreCase),
+                Reasoning = reasoning,
+                Decision = success ? "Validation passed; continue or finish" : "Validation failed; run FixIssuesStep",
+                Success = success,
                 RetryCount = retryCount,
                 PromptUsed = prompt,
                 RawAiResponse = raw,
@@ -36,8 +49,11 @@ public class ValidationStep(IAiService aiService, ILogger<ValidationStep> logger
             return new StepResult
             {
                 StepName = Name,
+                Status = "Failed",
                 Input = code,
                 Output = string.Empty,
+                Reasoning = reasoning,
+                Decision = "Retry validation once; fallback to fix step",
                 Success = false,
                 Error = ex.Message,
                 RetryCount = retryCount,
