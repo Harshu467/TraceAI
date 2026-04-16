@@ -11,4 +11,5 @@ public class StepResult
     public string PromptUsed { get; set; } = string.Empty;
     public string RawAiResponse { get; set; } = string.Empty;
     public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp => TimestampUtc;
 }

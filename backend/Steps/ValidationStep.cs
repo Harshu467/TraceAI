@@ -3,9 +3,10 @@ using TraceAI.Api.Services;
 
 namespace TraceAI.Api.Steps;
 
-public class ValidationStep(IAiService aiService) : IAgentStep
+public class ValidationStep(IAiService aiService, ILogger<ValidationStep> logger) : IAgentStep
 {
     public string Name => "ValidationStep";
+    public int Order => 3;
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
@@ -31,6 +32,7 @@ public class ValidationStep(IAiService aiService) : IAgentStep
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "{StepName} failed during execution.", Name);
             return new StepResult
             {
                 StepName = Name,

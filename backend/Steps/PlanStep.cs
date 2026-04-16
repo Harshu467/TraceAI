@@ -3,9 +3,10 @@ using TraceAI.Api.Services;
 
 namespace TraceAI.Api.Steps;
 
-public class PlanStep(IAiService aiService) : IAgentStep
+public class PlanStep(IAiService aiService, ILogger<PlanStep> logger) : IAgentStep
 {
     public string Name => "PlanStep";
+    public int Order => 1;
 
     public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
@@ -29,6 +30,7 @@ public class PlanStep(IAiService aiService) : IAgentStep
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "{StepName} failed during execution.", Name);
             return new StepResult
             {
                 StepName = Name,
