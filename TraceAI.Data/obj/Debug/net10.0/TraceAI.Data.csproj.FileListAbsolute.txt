@@ -1,0 +1,15 @@
+/workspaces/TraceAI/TraceAI.Data/bin/Debug/net10.0/TraceAI.Data.deps.json
+/workspaces/TraceAI/TraceAI.Data/bin/Debug/net10.0/TraceAI.Data.runtimeconfig.json
+/workspaces/TraceAI/TraceAI.Data/bin/Debug/net10.0/TraceAI.Data.dll
+/workspaces/TraceAI/TraceAI.Data/bin/Debug/net10.0/TraceAI.Data.pdb
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.csproj.AssemblyReference.cache
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.AssemblyInfoInputs.cache
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.AssemblyInfo.cs
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.csproj.CoreCompileInputs.cache
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.sourcelink.json
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.dll
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/refint/TraceAI.Data.dll
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.pdb
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/TraceAI.Data.genruntimeconfig.cache
+/workspaces/TraceAI/TraceAI.Data/obj/Debug/net10.0/ref/TraceAI.Data.dll
