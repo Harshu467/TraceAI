@@ -8,7 +8,7 @@ public class ImproveStructureStep(IAiService aiService, ILogger<ImproveStructure
     public string Name => "ImproveStructureStep";
     public int Order => 6;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "After a passing validation, improve clarity and structure without changing behavior.";
         var code = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";

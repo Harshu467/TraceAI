@@ -8,7 +8,7 @@ public class PlanStep(IAiService aiService, ILogger<PlanStep> logger) : IAgentSt
     public string Name => "PlanStep";
     public int Order => 1;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "I need an actionable plan before code work starts.";
         var prompt = $"""

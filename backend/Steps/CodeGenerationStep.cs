@@ -8,7 +8,7 @@ public class CodeGenerationStep(IAiService aiService, ILogger<CodeGenerationStep
     public string Name => "CodeGenerationStep";
     public int Order => 2;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "Generate a first working version using all known context.";
         var plan = context.StepOutputs.TryGetValue("PlanStep", out var planned) ? planned : "No prior plan available.";

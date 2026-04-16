@@ -8,7 +8,7 @@ public class ValidationStep(IAiService aiService, ILogger<ValidationStep> logger
     public string Name => "ValidationStep";
     public int Order => 3;
 
-    public async Task<StepResult> ExecuteAsync(ExecutionContext context, int retryCount, CancellationToken cancellationToken)
+    public async Task<StepResult> ExecuteAsync(TraceAI.Api.Models.ExecutionContext context, int retryCount, CancellationToken cancellationToken)
     {
         var reasoning = "Validate the latest implementation and decide whether to fix or continue improving.";
         var code = context.StepOutputs.TryGetValue("CodeGenerationStep", out var generated) ? generated : "No generated code found.";
