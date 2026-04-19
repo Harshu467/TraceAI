@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      OpenAI__ApiKey: ${OPENAI_API_KEY}
+      Cors__AllowedOrigins__0: http://localhost:5173
+      ConnectionStrings__DefaultConnection: Data Source=/app/data/traceai.db
+    ports:
+      - "5000:8080"
+    volumes:
+      - traceai_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5000/api
+        VITE_HUB_URL: http://localhost:5000/hubs/execution
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  traceai_data:

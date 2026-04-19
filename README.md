@@ -39,10 +39,33 @@ Set OpenAI API key in `backend/appsettings.json` or environment variable mapping
 ```bash
 cd frontend
 npm install
+cp .env.example .env # optional override
 npm run dev
 ```
 
 Frontend URL: `http://localhost:5173`
+
+### Frontend environment variables
+Create `frontend/.env` (or pass envs via your deploy platform):
+```bash
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_HUB_URL=http://localhost:5000/hubs/execution
+```
+
+## Docker Compose (full stack)
+From repository root:
+```bash
+export OPENAI_API_KEY=YOUR_KEY
+docker compose up --build
+```
+
+Services:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:5000`
+
+## Production notes
+- Backend CORS origins are configurable through `Cors:AllowedOrigins` (or `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, ... environment variables).
+- Prefer setting `OpenAI__ApiKey` via environment variables instead of committing secrets.
 
 ## API endpoints
 ### Execute task

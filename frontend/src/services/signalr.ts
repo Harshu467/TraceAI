@@ -1,7 +1,7 @@
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import type { StepResult } from '../types/step';
 
-const HUB_URL = 'http://localhost:5000/hubs/execution';
+const HUB_URL = import.meta.env.VITE_HUB_URL ?? 'http://localhost:5000/hubs/execution';
 
 export async function connectToTask(
   taskRunId: string,
