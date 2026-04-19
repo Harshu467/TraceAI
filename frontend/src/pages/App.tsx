@@ -63,7 +63,7 @@ export function App() {
 
   const successfulSteps = steps.filter((step) => step.success).length;
   const failedSteps = steps.length - successfulSteps;
-  const lastStep = steps.at(-1);
+  const lastStep = steps.length > 0 ? steps[steps.length - 1] : undefined;
   const runStatus = isRunning ? 'Running' : failedSteps > 0 ? 'Needs Attention' : steps.length ? 'Completed' : 'Idle';
 
   const renderContent = () => {
