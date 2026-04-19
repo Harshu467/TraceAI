@@ -8,6 +8,9 @@ public class TraceAiDbContext(DbContextOptions<TraceAiDbContext> options) : DbCo
     public DbSet<TaskRun> Tasks => Set<TaskRun>();
     public DbSet<TaskStep> Steps => Set<TaskStep>();
     public DbSet<StepLog> StepLogs => Set<StepLog>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PhoneOtpCode> PhoneOtpCodes => Set<PhoneOtpCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +43,32 @@ public class TraceAiDbContext(DbContextOptions<TraceAiDbContext> options) : DbCo
             entity.ToTable("StepLogs");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Message).IsRequired();
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("Users");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.Email).IsUnique();
+            entity.Property(x => x.Email).IsRequired();
+            entity.HasMany(x => x.RefreshTokens).WithOne(x => x.User).HasForeignKey(x => x.UserId);
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("RefreshTokens");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TokenHash).IsRequired();
+            entity.HasIndex(x => x.TokenHash);
+        });
+
+        modelBuilder.Entity<PhoneOtpCode>(entity =>
+        {
+            entity.ToTable("PhoneOtpCodes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.PhoneNumber).IsRequired();
+            entity.Property(x => x.CodeHash).IsRequired();
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
         });
     }
 }

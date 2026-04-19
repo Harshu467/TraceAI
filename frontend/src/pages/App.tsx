@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { HubConnection } from '@microsoft/signalr';
 import { TaskInput } from '../components/TaskInput';
 import { StepViewer } from '../components/StepViewer';
+import { AuthScreen } from '../components/AuthScreen';
 import { executeTask, retryStep } from '../services/api';
 import { connectToTask } from '../services/signalr';
 import type { StepResult } from '../types/step';
 
-type Page = 'workspace' | 'settings' | 'environment';
+type Page = 'workspace' | 'auth' | 'settings' | 'environment';
 type ThemeMode = 'light' | 'dark' | 'system';
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
   const [activePage, setActivePage] = useState<Page>('workspace');
   const [mode, setMode] = useState<ThemeMode>('system');
   const [language, setLanguage] = useState('English');
+  const [authenticatedEmail, setAuthenticatedEmail] = useState<string | null>(null);
   const connectionRef = useRef<HubConnection | null>(null);
   const envInfo = [
     { key: 'VITE_API_BASE_URL', value: import.meta.env.VITE_API_BASE_URL ?? '(default) http://localhost:5000/api' },
@@ -125,6 +127,10 @@ export function App() {
       );
     }
 
+    if (activePage === 'auth') {
+      return <AuthScreen onAuthenticated={setAuthenticatedEmail} />;
+    }
+
     if (activePage === 'environment') {
       return (
         <section className="card content">
@@ -179,11 +185,13 @@ export function App() {
       <header className="page-header">
         <h1>TraceAI Control Center</h1>
         <p>Production-grade AI execution workspace for planning, coding, validation, and retry control.</p>
+        <p className="muted">Authenticated user: {authenticatedEmail ?? 'none'}</p>
       </header>
 
       <nav className="nav-grid" aria-label="Primary navigation">
         {[
           ['workspace', 'Workspace'],
+          ['auth', 'Auth'],
           ['settings', 'Settings'],
           ['environment', 'Environment']
         ].map(([key, label]) => (
