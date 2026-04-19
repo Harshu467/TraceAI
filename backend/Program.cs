@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using TraceAI.Api.Data;
 using TraceAI.Api.Engine;
 using TraceAI.Api.Hubs;
@@ -45,6 +46,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -52,10 +57,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors("frontend");
 app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<ExecutionHub>("/hubs/execution");
+app.MapFallbackToFile("index.html");
 
 using (var scope = app.Services.CreateScope())
 {
