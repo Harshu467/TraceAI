@@ -44,7 +44,7 @@ export class StepResult<TInput = unknown, TOutput = unknown> {
     });
   }
 
-  public static createFailure<TInput = unknown, TOutput = unknown>(params: {
+  public static createFailure<TInput = unknown, TOutput = any>(params: {
     StepName: string;
     Input?: TInput;
     ErrorMessage: string;

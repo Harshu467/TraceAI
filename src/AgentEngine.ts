@@ -6,12 +6,12 @@ export interface AgentExecutionContext {
   metadata?: Record<string, unknown>;
 }
 
-export interface IStep<Input = unknown, Output = unknown> {
+export interface IStep<Input = unknown, Output = any> {
   readonly Name: string;
-  ExecuteAsync(input: Input, context: AgentExecutionContext): Promise<StepResult<Output>>;
+  ExecuteAsync(input: Input, context: AgentExecutionContext): Promise<StepResult<Input, Output>>;
 }
 
-export interface AgentStep<Input = unknown, Output = unknown> extends IStep<Input, Output> {
+export interface AgentStep<Input = unknown, Output = any> extends IStep<Input, Output> {
   readonly name: string;
   execute(input: Input, context: AgentExecutionContext): Promise<StepResult<Input, Output>>;
 }

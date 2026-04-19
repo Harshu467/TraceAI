@@ -6,7 +6,7 @@ export interface ExecutionResultsDisplayProps {
   steps: StepData[];
   success: boolean;
   prompt?: string;
-  onRetry?: (stepName: string) => void;
+  onRetry?: (stepName: string) => Promise<void>;
   isLoading?: boolean;
 }
 

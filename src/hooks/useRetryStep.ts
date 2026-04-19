@@ -32,11 +32,11 @@ export const useRetryStep = (options: UseRetryStepOptions = {}): UseRetryStepRes
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData: any = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Retry failed with status ${response.status}`);
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
         return data as StepData;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';

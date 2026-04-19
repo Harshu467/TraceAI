@@ -21,6 +21,7 @@ export const ExecutionApp: React.FC = () => {
     e.preventDefault();
 
     if (!promptInput.trim()) {
+      // @ts-ignore
       alert('Please enter a prompt');
       return;
     }
@@ -48,7 +49,7 @@ export const ExecutionApp: React.FC = () => {
               <textarea
                 id="prompt"
                 value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
+                onChange={(e) => setPromptInput((e.target as HTMLTextAreaElement).value)}
                 placeholder="Example: Create a function that validates email addresses"
                 rows={4}
                 disabled={isLoading}

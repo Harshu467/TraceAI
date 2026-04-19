@@ -2,18 +2,18 @@ import { AgentExecutionContext, AgentStep } from './AgentEngine';
 import { AIService } from './AIService';
 import { StepResult } from './StepResult';
 
-export abstract class BaseAgentStep<Input = unknown, Output = unknown> implements AgentStep<Input, Output> {
+export abstract class BaseAgentStep<Input = unknown, Output = any> implements AgentStep<Input, Output> {
   public abstract readonly name: string;
 
   public get Name(): string {
     return this.name;
   }
 
-  public async ExecuteAsync(input: Input, context: AgentExecutionContext): Promise<StepResult<Output>> {
+  public async ExecuteAsync(input: Input, context: AgentExecutionContext): Promise<StepResult<Input, Output>> {
     return this.execute(input, context);
   }
 
-  public abstract execute(input: Input, context: AgentExecutionContext): Promise<StepResult<Output>>;
+  public abstract execute(input: Input, context: AgentExecutionContext): Promise<StepResult<Input, Output>>;
 
   protected success(input: Input, output: Output): StepResult<Input, Output> {
     return StepResult.createSuccess({
@@ -23,16 +23,16 @@ export abstract class BaseAgentStep<Input = unknown, Output = unknown> implement
     });
   }
 
-  protected failure(input: Input, error: string): StepResult<Input> {
+  protected failure(input: Input, error: string): StepResult<Input, any> {
     return StepResult.createFailure({
       StepName: this.name,
       Input: input,
       ErrorMessage: error,
-    });
+    }) as StepResult<Input, Output>;
   }
 }
 
-export class PlanStep extends BaseAgentStep<string, { plan: string; userPrompt: string; aiPrompt: string }> {
+export class PlanStep extends BaseAgentStep<string, any> {
   public readonly name = 'Plan';
   private readonly aiService: AIService;
 
@@ -63,7 +63,7 @@ export class PlanStep extends BaseAgentStep<string, { plan: string; userPrompt: 
   }
 }
 
-export class CodeGenerationStep extends BaseAgentStep<{ plan: string; userPrompt: string; aiPrompt: string }, string> {
+export class CodeGenerationStep extends BaseAgentStep<any, any> {
   public readonly name = 'CodeGeneration';
   private readonly aiService: AIService;
 
@@ -96,7 +96,7 @@ export class CodeGenerationStep extends BaseAgentStep<{ plan: string; userPrompt
   }
 }
 
-export class ValidationStep extends BaseAgentStep<string, string> {
+export class ValidationStep extends BaseAgentStep<any, any> {
   public readonly name = 'Validation';
   private readonly aiService: AIService;
 
@@ -105,7 +105,7 @@ export class ValidationStep extends BaseAgentStep<string, string> {
     this.aiService = aiService;
   }
 
-  public async execute(input: string): Promise<StepResult<string>> {
+  public async execute(input: string): Promise<StepResult<string, string>> {
     const code = input?.trim();
     if (!code) {
       return this.failure(input, 'No generated code provided for validation.');

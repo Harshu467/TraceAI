@@ -76,14 +76,14 @@ export const StepDisplay: React.FC<StepDisplayProps> = ({ step, onRetry, isLoadi
             </div>
           )}
 
-          {step.Input && (
+          {step.Input != null && (
             <div className="detail-section">
               <h4>Input</h4>
               <pre className="detail-content">{JSON.stringify(step.Input, null, 2)}</pre>
             </div>
           )}
 
-          {step.Output && (
+          {step.Output != null && (
             <div className="detail-section">
               <h4>Output</h4>
               <pre className="detail-content">{JSON.stringify(step.Output, null, 2)}</pre>

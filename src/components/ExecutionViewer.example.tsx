@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExecutionResultsDisplay } from './components';
+import { ExecutionResultsDisplay } from './ExecutionResultsDisplay';
 
 /**
  * Example: ExecutionViewer Component
@@ -48,6 +48,7 @@ export const ExecutionViewer: React.FC = () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsRetrying(false);
     // Update with new results
+    // @ts-ignore
     alert(`Retried step: ${stepName}`);
   };
 

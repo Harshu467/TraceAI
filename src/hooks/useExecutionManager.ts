@@ -41,11 +41,11 @@ export const useExecutionManager = (options: UseExecutionManagerOptions = {}): U
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData: any = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Execution failed with status ${response.status}`);
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
         setSteps(data.stepResults || []);
         setSuccess(data.success ?? false);
       } catch (err) {
@@ -74,11 +74,11 @@ export const useExecutionManager = (options: UseExecutionManagerOptions = {}): U
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData: any = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Retry failed with status ${response.status}`);
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
         const updatedSteps = data.stepResults || currentSteps;
         setSteps(updatedSteps);
         setSuccess(data.success ?? false);

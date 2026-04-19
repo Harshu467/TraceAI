@@ -51,7 +51,7 @@ export class AIService {
         }),
       });
 
-      const payload = await response.json();
+      const payload: any = await response.json();
 
       if (!response.ok) {
         const apiError = payload?.error?.message ?? response.statusText;
