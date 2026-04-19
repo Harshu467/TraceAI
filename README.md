@@ -55,7 +55,8 @@ VITE_HUB_URL=http://localhost:5000/hubs/execution
 ## Docker Compose (full stack)
 From repository root:
 ```bash
-export OPENAI_API_KEY=YOUR_KEY
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY
 docker compose up --build
 ```
 
