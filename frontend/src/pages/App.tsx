@@ -6,25 +6,8 @@ import { executeTask, retryStep } from '../services/api';
 import { connectToTask } from '../services/signalr';
 import type { StepResult } from '../types/step';
 
-type Page = 'home' | 'about' | 'contact' | 'faq' | 'auth' | 'profile' | 'settings' | 'environment';
+type Page = 'workspace' | 'settings' | 'environment';
 type ThemeMode = 'light' | 'dark' | 'system';
-
-const FAQ_ITEMS = [
-  {
-    question: 'What is TraceAI?',
-    answer:
-      'TraceAI is a debuggable AI execution engine that breaks complex requests into transparent steps so users can review every phase of the workflow.'
-  },
-  {
-    question: 'How do retries work?',
-    answer:
-      'If a step fails, you can retry that specific step from the Home page without re-running the full execution pipeline.'
-  },
-  {
-    question: 'Can I change language and theme?',
-    answer: 'Yes. Visit Settings to choose your preferred language and switch between Light, Dark, or System mode.'
-  }
-];
 
 export function App() {
   const [steps, setSteps] = useState<StepResult[]>([]);
@@ -32,7 +15,7 @@ export function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activePage, setActivePage] = useState<Page>('home');
+  const [activePage, setActivePage] = useState<Page>('workspace');
   const [mode, setMode] = useState<ThemeMode>('system');
   const [language, setLanguage] = useState('English');
   const connectionRef = useRef<HubConnection | null>(null);
@@ -78,110 +61,66 @@ export function App() {
     }
   };
 
+  const successfulSteps = steps.filter((step) => step.success).length;
+  const failedSteps = steps.length - successfulSteps;
+  const lastStep = steps.at(-1);
+  const runStatus = isRunning ? 'Running' : failedSteps > 0 ? 'Needs Attention' : steps.length ? 'Completed' : 'Idle';
+
   const renderContent = () => {
-    if (activePage === 'home') {
+    if (activePage === 'workspace') {
       return (
-        <section className="card">
-          <h2>Agent Workspace</h2>
-          <p>Use this page to run and inspect each execution step in real time.</p>
+        <section className="workspace-shell">
+          <div className="workspace-grid">
+            <div className="stack">
+              <section className="card hero-card">
+                <p className="chip">AI Task Orchestrator</p>
+                <h2>Professional trace-first workflow</h2>
+                <p>
+                  Run engineering prompts with structured step visibility. Track execution quality in real time and retry
+                  only the failed stages when needed.
+                </p>
+              </section>
+              <TaskInput onExecute={handleExecute} isRunning={isRunning} />
+            </div>
+
+            <section className="card run-summary">
+              <h3>Run Overview</h3>
+              <p className="muted">Task Run ID: {taskRunId ?? 'Not started'}</p>
+
+              <div className="stats-grid">
+                <article>
+                  <h4>Status</h4>
+                  <p>{runStatus}</p>
+                </article>
+                <article>
+                  <h4>Total Steps</h4>
+                  <p>{steps.length}</p>
+                </article>
+                <article>
+                  <h4>Successful</h4>
+                  <p>{successfulSteps}</p>
+                </article>
+                <article>
+                  <h4>Failed</h4>
+                  <p>{failedSteps}</p>
+                </article>
+              </div>
+
+              <div className="timeline-meta">
+                <h4>Latest Activity</h4>
+                {lastStep ? (
+                  <p>
+                    {lastStep.stepName} · {new Date(lastStep.timestampUtc).toLocaleString()}
+                  </p>
+                ) : (
+                  <p className="muted">No step activity yet.</p>
+                )}
+              </div>
+            </section>
+          </div>
+
           {error && <p className="error">{error}</p>}
-          <TaskInput onExecute={handleExecute} isRunning={isRunning} />
           <StepViewer steps={steps} taskRunId={taskRunId} onRetry={handleRetry} />
-        </section>
-      );
-    }
-
-    if (activePage === 'about') {
-      return (
-        <section className="card content">
-          <h2>About TraceAI</h2>
-          <p>
-            TraceAI helps teams execute AI-assisted development tasks with complete visibility. Each task is split
-            into explainable phases such as planning, validation, implementation, and fixes.
-          </p>
-          <ul>
-            <li>Transparent multi-step execution pipeline</li>
-            <li>Structured logs and retry support</li>
-            <li>Real-time step updates via SignalR</li>
-            <li>Configuration options for user preferences</li>
-          </ul>
-        </section>
-      );
-    }
-
-    if (activePage === 'contact') {
-      return (
-        <section className="card content">
-          <h2>Contact & Queries</h2>
-          <p>Need help, have feedback, or found an issue? Reach us through the channels below:</p>
-          <ul>
-            <li>Email: support@traceai.app</li>
-            <li>Product Feedback: feedback@traceai.app</li>
-            <li>Partnerships: partnerships@traceai.app</li>
-          </ul>
-          <p>Response time: within 24-48 business hours.</p>
-        </section>
-      );
-    }
-
-    if (activePage === 'faq') {
-      return (
-        <section className="card content">
-          <h2>FAQ</h2>
-          {FAQ_ITEMS.map((item) => (
-            <article key={item.question} className="faq-item">
-              <h3>{item.question}</h3>
-              <p>{item.answer}</p>
-            </article>
-          ))}
-        </section>
-      );
-    }
-
-    if (activePage === 'auth') {
-      return (
-        <section className="card auth-grid">
-          <div>
-            <h2>Login</h2>
-            <label htmlFor="login-email">Email</label>
-            <input id="login-email" type="email" placeholder="you@example.com" />
-            <label htmlFor="login-password">Password</label>
-            <input id="login-password" type="password" placeholder="Enter password" />
-            <button type="button">Login</button>
-          </div>
-          <div>
-            <h2>Sign Up</h2>
-            <label htmlFor="signup-name">Full Name</label>
-            <input id="signup-name" type="text" placeholder="Your full name" />
-            <label htmlFor="signup-email">Email</label>
-            <input id="signup-email" type="email" placeholder="you@example.com" />
-            <label htmlFor="signup-password">Password</label>
-            <input id="signup-password" type="password" placeholder="Create password" />
-            <button type="button">Create account</button>
-          </div>
-        </section>
-      );
-    }
-
-    if (activePage === 'profile') {
-      return (
-        <section className="card content">
-          <h2>Profile Details</h2>
-          <div className="profile-grid">
-            <p>
-              <strong>Name:</strong> Demo User
-            </p>
-            <p>
-              <strong>Email:</strong> demo.user@traceai.app
-            </p>
-            <p>
-              <strong>Role:</strong> AI Workflow Engineer
-            </p>
-            <p>
-              <strong>Region:</strong> United States
-            </p>
-          </div>
-          <button type="button">Edit profile</button>
         </section>
       );
     }
@@ -238,18 +177,13 @@ export function App() {
   return (
     <main className="layout">
       <header className="page-header">
-        <h1>TraceAI</h1>
-        <p>Debuggable AI execution platform for planning, coding, and review.</p>
+        <h1>TraceAI Control Center</h1>
+        <p>Production-grade AI execution workspace for planning, coding, validation, and retry control.</p>
       </header>
 
       <nav className="nav-grid" aria-label="Primary navigation">
         {[
-          ['home', 'Home'],
-          ['about', 'About'],
-          ['contact', 'Contact'],
-          ['faq', 'FAQ'],
-          ['auth', 'Login / Sign Up'],
-          ['profile', 'Profile'],
+          ['workspace', 'Workspace'],
           ['settings', 'Settings'],
           ['environment', 'Environment']
         ].map(([key, label]) => (

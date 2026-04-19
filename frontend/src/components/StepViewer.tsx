@@ -11,12 +11,20 @@ export function StepViewer({ steps, taskRunId, onRetry }: StepViewerProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   if (!steps.length) {
-    return <section className="card">No steps yet. Execute a task to see tracing.</section>;
+    return (
+      <section className="card empty-state">
+        <h3>Execution timeline</h3>
+        <p className="muted">No steps yet. Run a task pipeline to populate detailed trace results.</p>
+      </section>
+    );
   }
 
   return (
     <section className="card">
-      <h2>Step Trace {taskRunId ? `(${taskRunId})` : ''}</h2>
+      <div className="section-title">
+        <h3>Execution Timeline {taskRunId ? `(${taskRunId})` : ''}</h3>
+        <p className="muted">Inspect each stage, logs, and retry controls.</p>
+      </div>
       <div className="stack">
         {steps.map((step, idx) => {
           const key = `${step.stepName}-${idx}-${step.retryCount}`;
@@ -24,19 +32,22 @@ export function StepViewer({ steps, taskRunId, onRetry }: StepViewerProps) {
           return (
             <article key={key} className="step">
               <div className="step-header">
-                <strong>{step.stepName}</strong>
-                <span className={step.success ? 'ok' : 'fail'}>{step.success ? 'Success' : 'Failed'}</span>
+                <div>
+                  <strong>{step.stepName}</strong>
+                  <p className="step-time">{new Date(step.timestampUtc).toLocaleString()}</p>
+                </div>
+                <span className={step.success ? 'ok pill' : 'fail pill'}>{step.success ? 'Success' : 'Failed'}</span>
               </div>
               <div className="row">
                 <small>Retry: {step.retryCount}</small>
-                <small>{new Date(step.timestampUtc).toLocaleString()}</small>
+                <small>{step.error ? 'Requires review' : 'Validated'}</small>
               </div>
               <button onClick={() => setExpanded((prev) => ({ ...prev, [key]: !isExpanded }))}>
-                {isExpanded ? 'Hide Logs' : 'Show Logs'}
+                {isExpanded ? 'Hide Details' : 'View Details'}
               </button>
               {!step.success && taskRunId && (
                 <button className="retry" onClick={() => onRetry(step.stepName)}>
-                  Retry Step
+                  Retry This Step
                 </button>
               )}
 
