@@ -19,6 +19,7 @@ builder.Services.AddDbContext<TraceAiDbContext>(options =>
 builder.Services.AddHttpClient<IAiService, OpenAiService>();
 builder.Services.AddScoped<IStepLogService, StepLogService>();
 builder.Services.AddScoped<IAgentExecutionEngine, AgentExecutionEngine>();
+builder.Services.AddScoped<IContactNotificationService, ContactNotificationService>();
 
 builder.Services.AddScoped<IAgentStep, PlanStep>();
 builder.Services.AddScoped<IAgentStep, CodeGenerationStep>();
