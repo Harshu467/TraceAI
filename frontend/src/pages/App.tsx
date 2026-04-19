@@ -1,204 +1,171 @@
-import { useEffect, useRef, useState } from 'react';
-import type { HubConnection } from '@microsoft/signalr';
-import { TaskInput } from '../components/TaskInput';
-import { StepViewer } from '../components/StepViewer';
-import { executeTask, retryStep } from '../services/api';
-import { connectToTask } from '../services/signalr';
-import type { StepResult } from '../types/step';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { getFaqCategories, getFaqItems, getPublicPage, submitContact } from '../services/publicApi';
+import type { FaqCategory, FaqItem, PublicPage } from '../types/public';
+import { WorkspacePage } from './WorkspacePage';
 
-type Page = 'workspace' | 'settings' | 'environment';
-type ThemeMode = 'light' | 'dark' | 'system';
+function useSeo(page?: PublicPage) {
+  useEffect(() => {
+    if (!page) return;
+    document.title = page.seo.title;
 
-export function App() {
-  const [steps, setSteps] = useState<StepResult[]>([]);
-  const [taskRunId, setTaskRunId] = useState<string | undefined>();
-  const [isRunning, setIsRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const description = document.querySelector('meta[name="description"]') ?? document.createElement('meta');
+    description.setAttribute('name', 'description');
+    description.setAttribute('content', page.seo.description);
+    document.head.appendChild(description);
 
-  const [activePage, setActivePage] = useState<Page>('workspace');
-  const [mode, setMode] = useState<ThemeMode>('system');
-  const [language, setLanguage] = useState('English');
-  const connectionRef = useRef<HubConnection | null>(null);
-  const envInfo = [
-    { key: 'VITE_API_BASE_URL', value: import.meta.env.VITE_API_BASE_URL ?? '(default) http://localhost:5000/api' },
-    { key: 'VITE_HUB_URL', value: import.meta.env.VITE_HUB_URL ?? '(default) http://localhost:5000/hubs/execution' },
-    { key: 'MODE', value: import.meta.env.MODE }
-  ];
+    const ogImage = document.querySelector('meta[property="og:image"]') ?? document.createElement('meta');
+    ogImage.setAttribute('property', 'og:image');
+    ogImage.setAttribute('content', page.seo.ogImageUrl);
+    document.head.appendChild(ogImage);
+  }, [page]);
+}
+
+function PublicPageView({ slug }: { slug: string }) {
+  const [page, setPage] = useState<PublicPage>();
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', mode);
-  }, [mode]);
+    getPublicPage(slug).then(setPage).catch(() => setPage(undefined));
+  }, [slug]);
 
-  const handleExecute = async (prompt: string, model: string) => {
-    setError(null);
-    setIsRunning(true);
-    setSteps([]);
+  useSeo(page);
 
-    try {
-      const response = await executeTask(prompt, model);
-      setTaskRunId(response.taskRunId);
-      setSteps(response.steps);
+  if (!page) return <section className="card">Loading...</section>;
+  return (
+    <section className="card">
+      <h1>{page.title}</h1>
+      <p>{page.body}</p>
+      {slug === '' && (
+        <div className="cta-row">
+          <a className="button-link" href="/login">Login</a>
+          <a className="button-link" href="/signup">Sign Up</a>
+        </div>
+      )}
+    </section>
+  );
+}
 
-      connectionRef.current?.stop();
-      connectionRef.current = await connectToTask(response.taskRunId, (step) => {
-        setSteps((prev) => [...prev, step]);
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setIsRunning(false);
-    }
-  };
+function FaqPage() {
+  const [categories, setCategories] = useState<FaqCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState('');
+  const [items, setItems] = useState<FaqItem[]>([]);
 
-  const handleRetry = async (stepName: string) => {
-    if (!taskRunId) return;
+  useEffect(() => {
+    getFaqCategories().then(setCategories);
+  }, []);
 
-    try {
-      const result = await retryStep(taskRunId, stepName);
-      setSteps((prev) => [...prev, result]);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+  useEffect(() => {
+    getFaqItems(selectedCategory || undefined, search || undefined).then(setItems);
+  }, [selectedCategory, search]);
 
-  const successfulSteps = steps.filter((step) => step.success).length;
-  const failedSteps = steps.length - successfulSteps;
-  const lastStep = steps.length > 0 ? steps[steps.length - 1] : undefined;
-  const runStatus = isRunning ? 'Running' : failedSteps > 0 ? 'Needs Attention' : steps.length ? 'Completed' : 'Idle';
+  const grouped = useMemo(() => {
+    return items.reduce<Record<string, FaqItem[]>>((acc, item) => {
+      const key = item.category.name;
+      acc[key] = acc[key] ?? [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }, [items]);
 
-  const renderContent = () => {
-    if (activePage === 'workspace') {
-      return (
-        <section className="workspace-shell">
-          <div className="workspace-grid">
-            <div className="stack">
-              <section className="card hero-card">
-                <p className="chip">AI Task Orchestrator</p>
-                <h2>Professional trace-first workflow</h2>
-                <p>
-                  Run engineering prompts with structured step visibility. Track execution quality in real time and retry
-                  only the failed stages when needed.
-                </p>
-              </section>
-              <TaskInput onExecute={handleExecute} isRunning={isRunning} />
-            </div>
-
-            <section className="card run-summary">
-              <h3>Run Overview</h3>
-              <p className="muted">Task Run ID: {taskRunId ?? 'Not started'}</p>
-
-              <div className="stats-grid">
-                <article>
-                  <h4>Status</h4>
-                  <p>{runStatus}</p>
-                </article>
-                <article>
-                  <h4>Total Steps</h4>
-                  <p>{steps.length}</p>
-                </article>
-                <article>
-                  <h4>Successful</h4>
-                  <p>{successfulSteps}</p>
-                </article>
-                <article>
-                  <h4>Failed</h4>
-                  <p>{failedSteps}</p>
-                </article>
-              </div>
-
-              <div className="timeline-meta">
-                <h4>Latest Activity</h4>
-                {lastStep ? (
-                  <p>
-                    {lastStep.stepName} · {new Date(lastStep.timestampUtc).toLocaleString()}
-                  </p>
-                ) : (
-                  <p className="muted">No step activity yet.</p>
-                )}
-              </div>
-            </section>
-          </div>
-
-          {error && <p className="error">{error}</p>}
-          <StepViewer steps={steps} taskRunId={taskRunId} onRetry={handleRetry} />
-        </section>
-      );
-    }
-
-    if (activePage === 'environment') {
-      return (
-        <section className="card content">
-          <h2>Environment</h2>
-          <p>These values help you verify frontend runtime connectivity settings.</p>
-          <table className="env-table">
-            <thead>
-              <tr>
-                <th>Variable</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {envInfo.map((item) => (
-                <tr key={item.key}>
-                  <td>{item.key}</td>
-                  <td>{item.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="muted">Tip: configure `frontend/.env` for local overrides.</p>
-        </section>
-      );
-    }
-
-    return (
-      <section className="card content">
-        <h2>Settings</h2>
-        <label htmlFor="language">Language</label>
-        <select id="language" value={language} onChange={(event) => setLanguage(event.target.value)}>
-          <option>English</option>
-          <option>Español</option>
-          <option>Français</option>
-          <option>Deutsch</option>
+  return (
+    <section className="card">
+      <h1>FAQ</h1>
+      <div className="row">
+        <input placeholder="Search FAQs" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+          <option value="">All categories</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
         </select>
+      </div>
+      {Object.entries(grouped).map(([categoryName, categoryItems]) => (
+        <div key={categoryName}>
+          <h3>{categoryName}</h3>
+          {categoryItems.map((item) => (
+            <article className="faq-item" key={item.id}>
+              <strong>{item.question}</strong>
+              <p>{item.answer}</p>
+            </article>
+          ))}
+        </div>
+      ))}
+    </section>
+  );
+}
 
-        <label htmlFor="mode">Mode</label>
-        <select id="mode" value={mode} onChange={(event) => setMode(event.target.value as ThemeMode)}>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="system">System</option>
-        </select>
+function ContactPage() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState('');
 
-        <p className="muted">Current language: {language}. Theme mode: {mode}.</p>
-      </section>
-    );
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      await submitContact(name, email, message);
+      setStatus('Submitted successfully. Our support team has been notified.');
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (error) {
+      setStatus((error as Error).message);
+    }
   };
+
+  return (
+    <section className="card">
+      <h1>Contact</h1>
+      <form onSubmit={onSubmit}>
+        <label>Name</label>
+        <input required value={name} onChange={(event) => setName(event.target.value)} />
+        <label>Email</label>
+        <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <label>Message</label>
+        <textarea required minLength={10} rows={6} value={message} onChange={(event) => setMessage(event.target.value)} />
+        <button type="submit">Send</button>
+      </form>
+      {status && <p className="muted">{status}</p>}
+    </section>
+  );
+}
+
+export function App() {
+  const location = useLocation();
+  const isPublicRoute = location.pathname !== '/app';
 
   return (
     <main className="layout">
       <header className="page-header">
-        <h1>TraceAI Control Center</h1>
-        <p>Production-grade AI execution workspace for planning, coding, validation, and retry control.</p>
+        <h1>TraceAI</h1>
+        <p>Trace-first AI execution workspace.</p>
+        {isPublicRoute && (
+          <div className="cta-row">
+            <a className="button-link" href="/login">Login</a>
+            <a className="button-link" href="/signup">Sign Up</a>
+          </div>
+        )}
       </header>
 
       <nav className="nav-grid" aria-label="Primary navigation">
-        {[
-          ['workspace', 'Workspace'],
-          ['settings', 'Settings'],
-          ['environment', 'Environment']
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={activePage === key ? 'nav-button active' : 'nav-button'}
-            onClick={() => setActivePage(key as Page)}
-          >
-            {label}
-          </button>
-        ))}
+        <Link className="nav-link" to="/">Home</Link>
+        <Link className="nav-link" to="/how-it-works">How It Works</Link>
+        <Link className="nav-link" to="/faq">FAQ</Link>
+        <Link className="nav-link" to="/contact">Contact</Link>
+        <Link className="nav-link" to="/app">Workspace</Link>
       </nav>
 
-      {renderContent()}
+      <Routes>
+        <Route path="/" element={<PublicPageView slug="" />} />
+        <Route path="/how-it-works" element={<PublicPageView slug="how-it-works" />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/app" element={<WorkspacePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </main>
   );
 }
