@@ -7,8 +7,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://0.0.0.0:8080
       OpenAI__ApiKey: ${OPENAI_API_KEY}
-      Cors__AllowedOrigins__0: http://localhost:5173
-      ConnectionStrings__DefaultConnection: Data Source=/app/data/traceai.db
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:-http://localhost:5173}
+      ConnectionStrings__DefaultConnection: ${TRACEAI_CONNECTION_STRING:-Data Source=/app/data/traceai.db}
     ports:
       - "5000:8080"
     volumes:
@@ -19,8 +19,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:5000/api
-        VITE_HUB_URL: http://localhost:5000/hubs/execution
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api}
+        VITE_HUB_URL: ${VITE_HUB_URL:-http://localhost:5000/hubs/execution}
     ports:
       - "5173:80"
     depends_on:
