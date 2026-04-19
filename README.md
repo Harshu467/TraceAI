@@ -67,6 +67,11 @@ Services:
 ## Production notes
 - Backend CORS origins are configurable through `Cors:AllowedOrigins` (or `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, ... environment variables).
 - Prefer setting `OpenAI__ApiKey` via environment variables instead of committing secrets.
+- Root `Dockerfile` builds the frontend and serves it from backend `wwwroot`, so a single Render Docker web service can host both UI and API.
+- For Render Docker deploys, set environment variables:
+  - `OpenAI__ApiKey=<your key>`
+  - `VITE_API_BASE_URL=/api`
+  - `VITE_HUB_URL=/hubs/execution`
 
 ## API endpoints
 ### Execute task
